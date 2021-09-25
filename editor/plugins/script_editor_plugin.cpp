@@ -1693,6 +1693,7 @@ struct _ScriptEditorItemData {
 	int index = 0;
 	String tooltip;
 	bool used = false;
+	bool unsaved_indicator = true;
 	int category = 0;
 	Node *ref = nullptr;
 
@@ -1859,7 +1860,7 @@ void ScriptEditor::_update_script_names() {
 	ScriptListName display_as = (ScriptListName)(int)EditorSettings::get_singleton()->get("text_editor/script_list/list_script_names_as");
 
 	Vector<_ScriptEditorItemData> sedata;
-
+	Ref<Texture2D> close_icon = Control::get_theme_icon(SNAME("close"), SNAME("Tabs"));
 	for (int i = 0; i < tab_container->get_child_count(); i++) {
 		ScriptEditorBase *se = Object::cast_to<ScriptEditorBase>(tab_container->get_child(i));
 		if (se) {
@@ -2016,11 +2017,15 @@ void ScriptEditor::_update_script_names() {
 	for (int i = 0; i < sedata_filtered.size(); i++) {
 		script_list->add_item(sedata_filtered[i].name, sedata_filtered[i].icon);
 		int index = script_list->get_item_count() - 1;
+		script_list->set_item_button(index, close_icon);
 		script_list->set_item_tooltip(index, sedata_filtered[i].tooltip);
 		script_list->set_item_metadata(index, sedata_filtered[i].index); /* Saving as metadata the script's index in the tab container and not the filtered one */
 		if (sedata_filtered[i].used) {
 			script_list->set_item_custom_bg_color(index, Color(88 / 255.0, 88 / 255.0, 60 / 255.0));
 		}
+		// if (sedata_filtered[i].unsaved_indicator)
+		// 	script_list->set_item_button(index, sedata_filtered[i]);
+
 		if (tab_container->get_current_tab() == sedata_filtered[i].index) {
 			script_list->select(index);
 			script_name_label->set_text(sedata_filtered[i].name);

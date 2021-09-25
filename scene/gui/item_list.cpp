@@ -283,6 +283,20 @@ Ref<Texture2D> ItemList::get_item_tag_icon(int p_idx) const {
 	return items[p_idx].tag_icon;
 }
 
+void ItemList::set_item_button(int p_idx, const Ref<Texture2D> &p_button) {
+	ERR_FAIL_INDEX(p_idx, items.size());
+
+	items.write[p_idx].button = p_button;
+	update();
+	shape_changed = true;
+}
+
+Ref<Texture2D> ItemList::get_item_button(int p_idx) const {
+	ERR_FAIL_INDEX_V(p_idx, items.size(), Ref<Texture2D>());
+
+	return items[p_idx].button;
+}
+
 void ItemList::set_item_selectable(int p_idx, bool p_selectable) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 
@@ -537,6 +551,19 @@ Size2 ItemList::Item::get_icon_size() const {
 	return size_result;
 }
 
+Size2 ItemList::Item::get_button_size() const {
+	if (button.is_null()) {
+		return Size2();
+	}
+
+	Size2 size_result = Size2(b_rect.size).abs();
+	if (b_rect.size.x == 0 || b_rect.size.y == 0) {
+		size_result = button->get_size();
+	}
+
+	return size_result;
+}
+
 void ItemList::gui_input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(p_event.is_null());
 
@@ -576,7 +603,6 @@ void ItemList::gui_input(const Ref<InputEvent> &p_event) {
 			if (i % current_columns == current_columns - 1) {
 				rc.size.width = get_size().width; //not right but works
 			}
-
 			if (rc.has_point(pos)) {
 				closest = i;
 				break;
@@ -1191,6 +1217,16 @@ void ItemList::_notification(int p_what) {
 				draw_texture(items[i].tag_icon, draw_pos + base_ofs);
 			}
 
+			// if (items[i].button.is_valid()) {
+			// 	Point2 draw_pos = items[i].rect_cache.position;
+			// 	// Point2 draw_pos;
+			// 	if (rtl) {
+			// 		draw_pos.x = size.width - items[i].button->get_width();
+			// 		print_line("yep, it's rtl");
+			// 	}
+			// 	draw_texture(items[i].button, draw_pos);
+			// }
+
 			if (items[i].text != "") {
 				int max_len = -1;
 
@@ -1255,6 +1291,66 @@ void ItemList::_notification(int p_what) {
 
 					items[i].text_buf->draw(get_canvas_item(), text_ofs, modulate);
 				}
+			}
+
+			if (items[i].button.is_valid()) {
+				Size2 button_size;
+				//= _adjust_to_max_size(items[i].get_icon_size(),fixed_icon_size) * icon_scale;
+
+				if (fixed_icon_size.x > 0 && fixed_icon_size.y > 0) {
+					button_size = fixed_icon_size * icon_scale;
+				} else {
+					button_size = items[i].get_button_size() * icon_scale;
+				}
+
+				Vector2 icon_ofs;
+
+				// Point2 pos = items[i].rect_cache.position + icon_ofs + base_ofs + text_ofs;
+				// Point2 pos = items[i].rect_cache.position;
+				Point2 pos;
+				pos.x = width - button_size.x;
+
+				// if (icon_mode == ICON_MODE_TOP) {
+				// 	pos.x += Math::floor((items[i].rect_cache.size.width - button_size.width) / 2);
+				// 	pos.y += icon_margin;
+				// 	text_ofs.y = button_size.height + icon_margin * 2;
+				// } else {
+					
+					/*Todo: Setup b_rect*/
+					pos.y += Math::floor((items[i].rect_cache.size.height - button_size.height) / 2);
+					pos.y += icon_margin;
+
+					// b_rect.position = pos;
+					// pos.y += items[i].rect_cache.size.height;
+					// text_ofs.x = button_size.width + icon_margin;
+				// }
+
+				Rect2 draw_rect = Rect2(pos, button_size);
+
+				if (fixed_icon_size.x > 0 && fixed_icon_size.y > 0) {
+					Rect2 adj = _adjust_to_max_size(items[i].get_icon_size() * icon_scale, button_size);
+					draw_rect.position += adj.position;
+					draw_rect.size = adj.size;
+				}
+
+				Color modulate = items[i].icon_modulate;
+				if (items[i].disabled) {
+					modulate.a *= 0.5;
+				}
+
+				// If the icon is transposed, we have to switch the size so that it is drawn correctly
+				if (items[i].icon_transposed) {
+					Size2 size_tmp = draw_rect.size;
+					draw_rect.size.x = size_tmp.y;
+					draw_rect.size.y = size_tmp.x;
+				}
+
+				Rect2 region = (items[i].icon_region.size.x == 0 || items[i].icon_region.size.y == 0) ? Rect2(Vector2(), items[i].icon->get_size()) : Rect2(items[i].icon_region);
+
+				if (rtl) {
+					draw_rect.position.x = size.width - draw_rect.position.x - draw_rect.size.x;
+				}
+				draw_texture_rect_region(items[i].button, draw_rect, region, modulate, true);
 			}
 
 			if (select_mode == SELECT_MULTI && i == current) {

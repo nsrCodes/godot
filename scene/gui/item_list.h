@@ -76,6 +76,11 @@ private:
 
 		Size2 get_icon_size() const;
 
+		// bool button_enabled = false;
+		Ref<Texture2D> button;
+		Rect2 b_rect;
+		Size2 get_button_size() const;
+		
 		bool operator<(const Item &p_another) const { return text < p_another.text; }
 	};
 
@@ -171,6 +176,9 @@ public:
 
 	void set_item_tag_icon(int p_idx, const Ref<Texture2D> &p_tag_icon);
 	Ref<Texture2D> get_item_tag_icon(int p_idx) const;
+
+	void set_item_button(int p_idx, const Ref<Texture2D> &p_button);
+	Ref<Texture2D> get_item_button(int p_idx) const;
 
 	void set_item_tooltip_enabled(int p_idx, const bool p_enabled);
 	bool is_item_tooltip_enabled(int p_idx) const;
